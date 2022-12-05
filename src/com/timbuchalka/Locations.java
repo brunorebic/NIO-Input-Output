@@ -1,45 +1,76 @@
 package com.timbuchalka;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
  * Created by timbuchalka on 2/04/2016.
  */
 public class Locations implements Map<Integer, Location> {
-    private static Map<Integer, Location> locations = new LinkedHashMap<Integer, Location>();
+    private static Map<Integer, Location> locations = new LinkedHashMap<>();
 
     public static void main(String[] args) throws IOException {
-        try (ObjectOutputStream locFile = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("locations.dat")))) {
-            for(Location location : locations.values()) {
-                locFile.writeObject(location);
+
+        //writing to file using java.nio
+        Path locPath = FileSystems.getDefault().getPath("locations_big.txt");
+        Path dirPath = FileSystems.getDefault().getPath("directions_big.txt");
+
+        try (BufferedWriter locFile = Files.newBufferedWriter(locPath);
+             BufferedWriter dirFile = Files.newBufferedWriter(dirPath)) {
+            for (Location location : locations.values()) {
+                locFile.write(location.getLocationID() + "," + location.getDescription() + "\n");
+                for (String direction : location.getExits().keySet()) {
+                    if (!direction.equalsIgnoreCase("Q")) {
+                        dirFile.write(location.getLocationID() + "," + direction + "," +
+                                location.getExits().get(direction) + "\n");
+                    }
+                }
             }
         }
-
     }
 
     static {
+        //reading from file using java.nio
+        Path locPath = FileSystems.getDefault().getPath("locations.txt");
+        Path dirPath = FileSystems.getDefault().getPath("directions.txt");
 
-        try(ObjectInputStream locFile = new ObjectInputStream(new BufferedInputStream(new FileInputStream("locations.dat")))) {
-            boolean eof = false;
-            while (!eof) {
-                try {
-                    Location location = (Location) locFile.readObject();
-                    System.out.println("Read location " + location.getLocationID() + " : " + location.getDescription());
-                    System.out.println("Found " + location.getExits().size() + " exits");
+        try (Scanner locFile = new Scanner(Files.newBufferedReader(locPath));
+             Scanner dirFile = new Scanner(Files.newBufferedReader(dirPath))) {
 
-                    locations.put(location.getLocationID(), location);
-                } catch (EOFException e) {
-                    eof = true;
-                }
+            locFile.useDelimiter(",");
+            dirFile.useDelimiter(",");
+
+            while (locFile.hasNextLine()) {
+                int locID = locFile.nextInt();
+                locFile.skip(locFile.delimiter());
+                String description = locFile.nextLine();
+
+                locations.put(locID, new Location(locID, description, null));
             }
-        } catch(InvalidClassException e) {
-            System.out.println("InvalidClassException " + e.getMessage());
-        } catch(IOException io) {
-            System.out.println("IO Exception " + io.getMessage());
-        } catch(ClassNotFoundException e) {
-            System.out.println("ClassNotFoundException " + e.getMessage());
+
+            Map<String, Integer> exits = new LinkedHashMap<>();
+            while (dirFile.hasNextLine()) {
+                int locationID = dirFile.nextInt();
+                dirFile.skip(dirFile.delimiter());
+                String direction = dirFile.next();
+                dirFile.skip(dirFile.delimiter());
+                int destination = Integer.parseInt(dirFile.nextLine());
+                exits.put(direction, destination);
+
+                locations.get(locationID).addExit(direction, destination);
+
+            }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+
     }
 
     @Override
