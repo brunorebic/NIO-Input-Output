@@ -1,5 +1,6 @@
 package com.timbuchalka;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -39,10 +40,9 @@ public class Locations implements Map<Integer, Location> {
         Path dirPath = FileSystems.getDefault().getPath("directions.txt");
 
         try (Scanner locFile = new Scanner(Files.newBufferedReader(locPath));
-             Scanner dirFile = new Scanner(Files.newBufferedReader(dirPath))) {
+             BufferedReader dirFile = Files.newBufferedReader(dirPath)) {
 
             locFile.useDelimiter(",");
-            dirFile.useDelimiter(",");
 
             while (locFile.hasNextLine()) {
                 int locID = locFile.nextInt();
@@ -52,14 +52,12 @@ public class Locations implements Map<Integer, Location> {
                 locations.put(locID, new Location(locID, description, null));
             }
 
-            Map<String, Integer> exits = new LinkedHashMap<>();
-            while (dirFile.hasNextLine()) {
-                int locationID = dirFile.nextInt();
-                dirFile.skip(dirFile.delimiter());
-                String direction = dirFile.next();
-                dirFile.skip(dirFile.delimiter());
-                int destination = Integer.parseInt(dirFile.nextLine());
-                exits.put(direction, destination);
+            String input;
+            while ((input = dirFile.readLine()) != null) {
+                String[] data = input.split(",");
+                int locationID = Integer.parseInt(data[0]);
+                String direction = data[1];
+                int destination = Integer.parseInt(data[2]);
 
                 locations.get(locationID).addExit(direction, destination);
 
