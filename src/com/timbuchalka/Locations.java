@@ -1,8 +1,6 @@
 package com.timbuchalka;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,60 +13,87 @@ public class Locations implements Map<Integer, Location> {
     private static Map<Integer, Location> locations = new LinkedHashMap<>();
 
     public static void main(String[] args) throws IOException {
+        //writing object to file using java.nio
+        Path locPath = FileSystems.getDefault().getPath("locations.dat");
 
-        //writing to file using java.nio
-        Path locPath = FileSystems.getDefault().getPath("locations_big.txt");
-        Path dirPath = FileSystems.getDefault().getPath("directions_big.txt");
-
-        try (BufferedWriter locFile = Files.newBufferedWriter(locPath);
-             BufferedWriter dirFile = Files.newBufferedWriter(dirPath)) {
+        try (ObjectOutputStream locFile = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(locPath)))) {
             for (Location location : locations.values()) {
-                locFile.write(location.getLocationID() + "," + location.getDescription() + "\n");
-                for (String direction : location.getExits().keySet()) {
-                    if (!direction.equalsIgnoreCase("Q")) {
-                        dirFile.write(location.getLocationID() + "," + direction + "," +
-                                location.getExits().get(direction) + "\n");
-                    }
-                }
+                locFile.writeObject(location);
             }
         }
+
+        //writing variable by variable to file using java.nio
+//        Path locPath = FileSystems.getDefault().getPath("locations_big.txt");
+//        Path dirPath = FileSystems.getDefault().getPath("directions_big.txt");
+//
+//        try (BufferedWriter locFile = Files.newBufferedWriter(locPath);
+//             BufferedWriter dirFile = Files.newBufferedWriter(dirPath)) {
+//            for (Location location : locations.values()) {
+//                locFile.write(location.getLocationID() + "," + location.getDescription() + "\n");
+//                for (String direction : location.getExits().keySet()) {
+//                    if (!direction.equalsIgnoreCase("Q")) {
+//                        dirFile.write(location.getLocationID() + "," + direction + "," +
+//                                location.getExits().get(direction) + "\n");
+//                    }
+//                }
+//            }
+//        }
     }
 
     static {
-        //reading from file using java.nio
-        Path locPath = FileSystems.getDefault().getPath("locations.txt");
-        Path dirPath = FileSystems.getDefault().getPath("directions.txt");
+        //reading objects from a file using java.nio
+        Path locPath = FileSystems.getDefault().getPath("locations.dat");
 
-        try (Scanner locFile = new Scanner(Files.newBufferedReader(locPath));
-             BufferedReader dirFile = Files.newBufferedReader(dirPath)) {
-
-            locFile.useDelimiter(",");
-
-            while (locFile.hasNextLine()) {
-                int locID = locFile.nextInt();
-                locFile.skip(locFile.delimiter());
-                String description = locFile.nextLine();
-
-                locations.put(locID, new Location(locID, description, null));
-            }
-
-            String input;
-            while ((input = dirFile.readLine()) != null) {
-                String[] data = input.split(",");
-                int locationID = Integer.parseInt(data[0]);
-                String direction = data[1];
-                int destination = Integer.parseInt(data[2]);
-
-                locations.get(locationID).addExit(direction, destination);
-
+        try (ObjectInputStream locFile = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(locPath)))) {
+            boolean isEof = false;
+            while (!isEof) {
+                try {
+                    Location location = (Location) locFile.readObject();
+                    locations.put(location.getLocationID(), location);
+                } catch (EOFException e) {
+                    isEof = true;
+                }
             }
 
 
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
 
-
+        //reading variable by variable from file using java.nio
+//        Path locPath = FileSystems.getDefault().getPath("locations.txt");
+//        Path dirPath = FileSystems.getDefault().getPath("directions.txt");
+//
+//        try (Scanner locFile = new Scanner(Files.newBufferedReader(locPath));
+//             BufferedReader dirFile = Files.newBufferedReader(dirPath)) {
+//
+//            locFile.useDelimiter(",");
+//
+//            while (locFile.hasNextLine()) {
+//                int locID = locFile.nextInt();
+//                locFile.skip(locFile.delimiter());
+//                String description = locFile.nextLine();
+//
+//                locations.put(locID, new Location(locID, description, null));
+//            }
+//
+//            String input;
+//            while ((input = dirFile.readLine()) != null) {
+//                String[] data = input.split(",");
+//                int locationID = Integer.parseInt(data[0]);
+//                String direction = data[1];
+//                int destination = Integer.parseInt(data[2]);
+//
+//                locations.get(locationID).addExit(direction, destination);
+//
+//            }
+//
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
