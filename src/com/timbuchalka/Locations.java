@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 /**
@@ -33,7 +34,7 @@ public class Locations implements Map<Integer, Location> {
                 builder.append("\n");
             }
         }
-        Files.write(newFile, builder.toString().getBytes(StandardCharsets.UTF_8));
+        Files.write(newFile, builder.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND); //default StandardOpenOption.CREATE
 
 
         //writing object to file using java.nio and java.io
