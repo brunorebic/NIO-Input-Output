@@ -1,8 +1,10 @@
 package com.timbuchalka;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -14,6 +16,7 @@ public class Locations implements Map<Integer, Location> {
     public static void main(String[] args) throws IOException {
 
         //writing to file only using java.nio
+        //when writing using Files.write we are writing bytes to file
         Path newFile = FileSystems.getDefault().getPath("locations_nio.txt");
         StringBuilder builder = new StringBuilder();
 
@@ -30,8 +33,8 @@ public class Locations implements Map<Integer, Location> {
                 builder.append("\n");
             }
         }
-        //when writing using Files.write we are writing bytes to file
         Files.write(newFile, builder.toString().getBytes(StandardCharsets.UTF_8));
+
 
         //writing object to file using java.nio and java.io
 //        Path locPath = FileSystems.getDefault().getPath("locations.dat");
@@ -62,20 +65,19 @@ public class Locations implements Map<Integer, Location> {
 
     static {
 
-        //reading from file using only java.nio for directions.txt
+        //reading from file using only java.nio
         Path locPath = FileSystems.getDefault().getPath("locations.txt");
         Path dirPath = FileSystems.getDefault().getPath("directions.txt");
 
         try {
-            Scanner locFile = new Scanner(Files.newBufferedReader(locPath));
+            List<String> locationsList = Files.readAllLines(locPath);
             List<String> directionsList = Files.readAllLines(dirPath);
 
-            locFile.useDelimiter(",");
+            for (String str : locationsList) {
+                int index = str.indexOf(",");  //position of "," in line
 
-            while (locFile.hasNextLine()) {
-                int locID = locFile.nextInt();
-                locFile.skip(locFile.delimiter());
-                String description = locFile.nextLine();
+                int locID = Integer.parseInt(str.substring(0, index));  //everything before "," is location ID
+                String description = str.substring(index + 1); //everything after is location description
 
                 locations.put(locID, new Location(locID, description, null));
             }
@@ -115,6 +117,7 @@ public class Locations implements Map<Integer, Location> {
 //        } catch (ClassNotFoundException e) {
 //            throw new RuntimeException(e);
 //        }
+
 
         //reading variable by variable from file using java.nio
 //        Path locPath = FileSystems.getDefault().getPath("locations.txt");
